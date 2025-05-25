@@ -26,7 +26,6 @@ const schema = a.schema({
       date: a.datetime().required(),
       playerCount: a.integer().required(),
       gameType: a.string().required(), // 東風 or 半荘
-      players: a.hasMany('MahjongScorePlayer', 'mahjongScore'),
     })
     .authorization((allow) => [allow.publicApiKey()]),
 
@@ -34,8 +33,8 @@ const schema = a.schema({
   MahjongScorePlayer: a
     .model({
       score: a.integer().required(),
-      player: a.belongsTo('Player', 'players'),
-      mahjongScore: a.belongsTo('MahjongScore', 'players'),
+      playerId: a.string().required(),
+      mahjongScoreId: a.string().required(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
 });

@@ -234,8 +234,8 @@ export default function CreateScorePage() {
           try {
             const playerScoreResponse = await client.models.MahjongScorePlayer.create({
               score: score,
-              player: { id: playerId },
-              mahjongScore: { id: scoreId }
+              playerId: playerId,
+              mahjongScoreId: scoreId
             });
             
             if (playerScoreResponse.data) {
