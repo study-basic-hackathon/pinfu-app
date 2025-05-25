@@ -16,15 +16,15 @@ export default function App() {
   // const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
   const todos=[{id: 13,name: "はむすたー",score: 40000},{id: 10,name: "はむすたー",score: 30000},{id: 15,name: "はむすたー",score: 50000}]
 
-  function listTodos() {
-    client.models.Todo.observeQuery().subscribe({
-      next: (data) => setTodos([...data.items]),
-    });
-  }
+  //function listTodos() {
+  //  client.models.Todo.observeQuery().subscribe({
+    //  next: (data) => setTodos([...data.items]),
+    //});
+  //}
 
-  useEffect(() => {
-    listTodos();
-  }, []);
+  // useEffect(() => {
+  //   listTodos();
+  // }, []);
 
   function createTodo() {
     client.models.Todo.create({
