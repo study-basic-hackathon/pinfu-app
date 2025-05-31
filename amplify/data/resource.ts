@@ -12,6 +12,31 @@ const schema = a.schema({
       content: a.string(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
+
+  // 麻雀プレイヤーのモデル
+  Player: a
+    .model({
+      name: a.string().required(),
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
+
+  // 麻雀スコアのモデル
+  MahjongScore: a
+    .model({
+      date: a.datetime().required(),
+      playerCount: a.integer().required(),
+      gameType: a.string().required(), // 東風 or 半荘
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
+
+  // スコアとプレイヤーの関連モデル
+  MahjongScorePlayer: a
+    .model({
+      score: a.integer().required(),
+      playerId: a.string().required(),
+      mahjongScoreId: a.string().required(),
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
