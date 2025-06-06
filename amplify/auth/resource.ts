@@ -1,5 +1,5 @@
 import { defineAuth } from "@aws-amplify/backend";
-import { postConfirmationFunction } from "../function/postConfirmation/resource.js";
+import { postConfirmationFunction } from "@functions/postConfirmation/resource.js";
 
 /**
  * Define and configure your auth resource
