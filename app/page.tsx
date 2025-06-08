@@ -74,12 +74,15 @@ export default function Home() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
             <Link href="/score/create">
               <Button className="w-full">新しいスコアを記録</Button>
             </Link>
             <Link href="/score">
               <Button variant="outline" className="w-full">スコア履歴を見る</Button>
+            </Link>
+            <Link href="/chat">
+              <Button variant="outline" className="w-full">チャットルーム</Button>
             </Link>
           </div>
         </div>
