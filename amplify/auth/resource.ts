@@ -10,9 +10,9 @@ export const auth = defineAuth({
     email: true,
   },
   userAttributes: {
-    nickname: {
+    "custom:nickname": {
+      dataType: "String",
       mutable: true,
-      required: true,
     },
   },
   // triggers: {
