@@ -17,8 +17,12 @@ const schema = a.schema({
   Player: a
     .model({
       name: a.string().required(),
+      userId: a.string().required(), // Cognito User IDを保存
     })
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization((allow) => [
+      allow.publicApiKey(),
+      allow.authenticated(), // 認証済みユーザーのみアクセス可能
+    ]),
 
   // 麻雀スコアのモデル
   MahjongScore: a

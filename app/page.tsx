@@ -9,6 +9,7 @@ import outputs from "@/amplify_outputs.json";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { ensurePlayerExists, getPlayerByUserId } from "./utils/playerUtils";
 
 Amplify.configure(outputs);
 
@@ -28,15 +29,20 @@ export default function Home() {
         const currentUser = await getCurrentUser();
         const userId = currentUser.userId;
         
-        // ユーザーIDを使ってプレイヤー情報を取得
-        const response = await client.models.Player.get({
-          id: userId
-        });
+        // まず既存のプレイヤー情報を取得を試行
+        let player = await getPlayerByUserId(userId);
         
-        if (response) {
-          // responseがnullでない場合にのみ設定
-          setPlayerInfo(response.data);
+        // プレイヤー情報が存在しない場合は作成
+        if (!player) {
+          console.log('プレイヤー情報が見つからないため、新規作成します...');
+          const playerId = await ensurePlayerExists();
+          if (playerId) {
+            // 作成後に再度取得
+            player = await getPlayerByUserId(userId);
+          }
         }
+        
+        setPlayerInfo(player);
       } catch (error) {
         console.error("プレイヤー情報の取得に失敗しました:", error);
       } finally {
@@ -67,22 +73,25 @@ export default function Home() {
               <p className="mb-2">
                 <span className="font-medium">プレイヤー名:</span> {playerInfo.name}
               </p>
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Player ID:</span> {playerInfo.id}
+              </p>
             </div>
           ) : (
             <div className="mb-6 p-4 bg-yellow-50 text-yellow-800 rounded-md">
-              <p>プレイヤー情報が見つかりませんでした。</p>
+              <p>プレイヤー情報の作成中です。しばらくお待ちください...</p>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
             <Link href="/score/create">
-              <Button className="w-full">新しいスコアを記録</Button>
+              <Button className="w-full" disabled={!playerInfo}>新しいスコアを記録</Button>
             </Link>
             <Link href="/score">
-              <Button variant="outline" className="w-full">スコア履歴を見る</Button>
+              <Button variant="outline" className="w-full" disabled={!playerInfo}>スコア履歴を見る</Button>
             </Link>
             <Link href="/chat">
-              <Button variant="outline" className="w-full">チャットルーム</Button>
+              <Button variant="outline" className="w-full" disabled={!playerInfo}>チャットルーム</Button>
             </Link>
           </div>
         </div>

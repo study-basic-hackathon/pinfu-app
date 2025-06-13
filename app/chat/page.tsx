@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import ChatMessageComponent from "@/app/components/ChatMessage";
+import { ensurePlayerExists, getPlayerByUserId } from "../utils/playerUtils";
 
 Amplify.configure(outputs);
 
@@ -32,15 +33,20 @@ export default function ChatPage() {
         const currentUser = await getCurrentUser();
         const userId = currentUser.userId;
         
-        // ユーザーIDを使ってプレイヤー情報を取得
-        const response = await client.models.Player.get({
-          id: userId
-        });
+        // まず既存のプレイヤー情報を取得を試行
+        let player = await getPlayerByUserId(userId);
         
-        if (response) {
-          // responseがnullでない場合にのみ設定
-          setPlayerInfo(response.data);
+        // プレイヤー情報が存在しない場合は作成
+        if (!player) {
+          console.log('プレイヤー情報が見つからないため、新規作成します...');
+          const playerId = await ensurePlayerExists();
+          if (playerId) {
+            // 作成後に再度取得
+            player = await getPlayerByUserId(userId);
+          }
         }
+        
+        setPlayerInfo(player);
       } catch (error) {
         console.error("プレイヤー情報の取得に失敗しました:", error);
       } finally {
@@ -140,7 +146,7 @@ export default function ChatPage() {
             </div>
           ) : (
             <div className="mb-6 p-4 bg-yellow-50 text-yellow-800 rounded-md">
-              <p>プレイヤー情報が見つかりませんでした。</p>
+              <p>プレイヤー情報の作成中です。しばらくお待ちください...</p>
             </div>
           )}
         </div>
