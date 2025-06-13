@@ -57,10 +57,12 @@ export default function ChatPage() {
   useEffect(() => {
     async function fetchMessages() {
       try {
-        const messagesResponse = await client.models.ChatMessage.list({
-          sort: (message) => message.createdAt("DESC"),
-        });
-        setMessages(messagesResponse.data);
+        const messagesResponse = await client.models.ChatMessage.list();
+        // クライアントサイドでソート（最新順）
+        const sortedMessages = messagesResponse.data.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setMessages(sortedMessages);
       } catch (error) {
         console.error("メッセージの取得に失敗しました:", error);
       }
@@ -69,11 +71,13 @@ export default function ChatPage() {
     fetchMessages();
     
     // リアルタイム更新用のサブスクリプション
-    const subscription = client.models.ChatMessage.observeQuery({
-      sort: (message) => message.createdAt("DESC"),
-    }).subscribe({
+    const subscription = client.models.ChatMessage.observeQuery().subscribe({
       next: ({ items }) => {
-        setMessages(items);
+        // リアルタイムデータもクライアントサイドでソート
+        const sortedItems = items.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setMessages(sortedItems);
       },
     });
 
