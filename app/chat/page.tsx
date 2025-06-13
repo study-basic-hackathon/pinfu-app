@@ -139,7 +139,6 @@ export default function ChatPage() {
                   onChange={(e) => setMessageContent(e.target.value)}
                   placeholder="メッセージを入力..."
                   className="flex-grow"
-                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 />
                 <Button onClick={sendMessage}>送信</Button>
               </div>
