@@ -17,8 +17,12 @@ const schema = a.schema({
   Player: a
     .model({
       name: a.string().required(),
+      userId: a.string().required(), // Cognito User IDを保存
     })
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization((allow) => [
+      allow.publicApiKey(),
+      allow.authenticated(), // 認証済みユーザーのみアクセス可能
+    ]),
 
   // 麻雀スコアのモデル
   MahjongScore: a
@@ -35,6 +39,35 @@ const schema = a.schema({
       score: a.integer().required(),
       playerId: a.string().required(),
       mahjongScoreId: a.string().required(),
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
+    
+  // チャットメッセージのモデル
+  ChatMessage: a
+    .model({
+      content: a.string().required(),
+      playerId: a.string().required(),
+      createdAt: a.datetime().required(),
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
+    
+  // リプライメッセージのモデル
+  ChatReply: a
+    .model({
+      content: a.string().required(),
+      chatMessageId: a.string().required(), // 返信先のメッセージID
+      playerId: a.string().required(),
+      createdAt: a.datetime().required(),
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
+    
+  // いいねのモデル
+  ChatLike: a
+    .model({
+      chatMessageId: a.string(), // メッセージIDへのいいね
+      chatReplyId: a.string(), // リプライIDへのいいね
+      playerId: a.string().required(), // いいねしたプレイヤーID
+      createdAt: a.datetime().required(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
 });

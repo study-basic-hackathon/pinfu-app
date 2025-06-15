@@ -122,16 +122,16 @@ export default function CreateScorePage() {
 
     async function createSamplePlayers() {
       const samplePlayers = [
-        { name: "田中太郎" },
-        { name: "佐藤次郎" },
-        { name: "鈴木三郎" },
-        { name: "高橋四郎" },
-        { name: "伊藤五郎" },
-        { name: "渡辺六郎" },
-        { name: "山本七郎" },
-        { name: "中村八郎" },
-        { name: "小林九郎" },
-        { name: "加藤十郎" }
+        { name: "田中太郎", userId: `sample_user_1_${Date.now()}` },
+        { name: "佐藤次郎", userId: `sample_user_2_${Date.now()}` },
+        { name: "鈴木三郎", userId: `sample_user_3_${Date.now()}` },
+        { name: "高橋四郎", userId: `sample_user_4_${Date.now()}` },
+        { name: "伊藤五郎", userId: `sample_user_5_${Date.now()}` },
+        { name: "渡辺六郎", userId: `sample_user_6_${Date.now()}` },
+        { name: "山本七郎", userId: `sample_user_7_${Date.now()}` },
+        { name: "中村八郎", userId: `sample_user_8_${Date.now()}` },
+        { name: "小林九郎", userId: `sample_user_9_${Date.now()}` },
+        { name: "加藤十郎", userId: `sample_user_10_${Date.now()}` }
       ];
 
       try {
