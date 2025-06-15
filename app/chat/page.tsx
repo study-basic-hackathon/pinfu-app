@@ -23,6 +23,12 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [messageContent, setMessageContent] = useState("");
   const [messages, setMessages] = useState<Schema["ChatMessage"]["type"][]>([]);
+  const [sending, setSending] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState({
+    create: false,
+    update: false,
+    delete: false
+  });
 
   // ユーザー情報の取得
   useEffect(() => {
@@ -64,6 +70,7 @@ export default function ChatPage() {
     async function fetchMessages() {
       try {
         const messagesResponse = await client.models.ChatMessage.list();
+        
         // クライアントサイドでソート（最新順）
         const sortedMessages = messagesResponse.data.sort((a, b) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -76,33 +83,113 @@ export default function ChatPage() {
 
     fetchMessages();
     
-    // リアルタイム更新用のサブスクリプション
-    const subscription = client.models.ChatMessage.observeQuery().subscribe({
-      next: ({ items }) => {
-        // リアルタイムデータもクライアントサイドでソート
-        const sortedItems = items.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        setMessages(sortedItems);
+    // より確実なリアルタイム更新のための複数のSubscription
+    const createSubscription = client.models.ChatMessage.onCreate().subscribe({
+      next: async (newMessage) => {
+        setSubscriptionStatus(prev => ({ ...prev, create: true }));
+        
+        // 新しいメッセージを既存のリストに追加（重複チェック）
+        setMessages(prev => {
+          // 既に存在するメッセージかチェック
+          const exists = prev.some(msg => msg.id === newMessage.id);
+          if (exists) {
+            return prev;
+          }
+          
+          const updatedMessages = [newMessage, ...prev];
+          return updatedMessages.sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        });
       },
+      error: (error) => {
+        console.error('onCreate subscription error:', error);
+        setSubscriptionStatus(prev => ({ ...prev, create: false }));
+      }
     });
 
-    return () => subscription.unsubscribe();
+    const updateSubscription = client.models.ChatMessage.onUpdate().subscribe({
+      next: (updatedMessage) => {
+        setSubscriptionStatus(prev => ({ ...prev, update: true }));
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === updatedMessage.id ? updatedMessage : msg
+          ).sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+        );
+      },
+      error: (error) => {
+        console.error('onUpdate subscription error:', error);
+        setSubscriptionStatus(prev => ({ ...prev, update: false }));
+      }
+    });
+
+    const deleteSubscription = client.models.ChatMessage.onDelete().subscribe({
+      next: (deletedMessage) => {
+        setSubscriptionStatus(prev => ({ ...prev, delete: true }));
+        setMessages(prev => 
+          prev.filter(msg => msg.id !== deletedMessage.id)
+        );
+      },
+      error: (error) => {
+        console.error('onDelete subscription error:', error);
+        setSubscriptionStatus(prev => ({ ...prev, delete: false }));
+      }
+    });
+
+    // フォールバックとして定期的な更新も追加
+    const intervalId = setInterval(() => {
+      fetchMessages();
+    }, 30000); // 30秒ごとに更新
+
+    return () => {
+      createSubscription.unsubscribe();
+      updateSubscription.unsubscribe();
+      deleteSubscription.unsubscribe();
+      clearInterval(intervalId);
+    };
   }, []);
+
+  // メッセージリストを手動で更新（同期処理）
+  const refreshMessages = async () => {
+    try {
+      const messagesResponse = await client.models.ChatMessage.list();
+      const sortedMessages = messagesResponse.data.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setMessages(sortedMessages);
+    } catch (error) {
+      console.error("メッセージの再取得に失敗しました:", error);
+    }
+  };
 
   // メッセージを送信
   const sendMessage = async () => {
-    if (!messageContent.trim() || !playerInfo) return;
+    if (!messageContent.trim() || !playerInfo || sending) {
+      return;
+    }
 
+    setSending(true);
+    
+    // 送信するメッセージ内容を保存（クリア前に）
+    const messageToSend = messageContent.trim();
+    
+    // 即座に入力フィールドをクリア（重複送信防止）
+    setMessageContent("");
+    
     try {
       await client.models.ChatMessage.create({
-        content: messageContent,
+        content: messageToSend,
         playerId: playerInfo.id,
         createdAt: new Date().toISOString(),
       });
-      setMessageContent("");
     } catch (error) {
       console.error("メッセージの送信に失敗しました:", error);
+      // 送信失敗時はメッセージを復元
+      setMessageContent(messageToSend);
+    } finally {
+      setSending(false);
     }
   };
 
@@ -122,26 +209,59 @@ export default function ChatPage() {
         <div className="text-center py-8">読み込み中...</div>
       ) : (
         <div className="bg-white p-6 rounded-lg shadow-md">
+
+          
           {playerInfo ? (
-            <div className="flex flex-col h-[calc(100vh-250px)]">
+            <div className="flex flex-col h-[calc(100vh-300px)]">
               <div className="flex-grow overflow-y-auto mb-4 space-y-4">
                 {messages.map((message) => (
                   <ChatMessageComponent 
                     key={message.id} 
                     message={message} 
-                    currentPlayerId={playerInfo.id} 
+                    currentPlayerId={playerInfo.id}
+                    playerName={message.playerId === playerInfo.id ? playerInfo.name : undefined}
                   />
                 ))}
               </div>
-              <div className="flex space-x-2">
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault(); // フォーム送信を無効化
+                }}
+                className="flex space-x-2"
+              >
                 <Input
                   value={messageContent}
                   onChange={(e) => setMessageContent(e.target.value)}
                   placeholder="メッセージを入力..."
                   className="flex-grow"
+                  disabled={sending}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      return false;
+                    }
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      return false;
+                    }
+                  }}
                 />
-                <Button onClick={sendMessage}>送信</Button>
-              </div>
+                <Button 
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    sendMessage();
+                  }} 
+                  disabled={sending || !messageContent.trim()}
+                >
+                  {sending ? "送信中..." : "送信"}
+                </Button>
+              </form>
             </div>
           ) : (
             <div className="mb-6 p-4 bg-yellow-50 text-yellow-800 rounded-md">

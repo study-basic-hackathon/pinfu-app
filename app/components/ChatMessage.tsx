@@ -6,25 +6,31 @@ import type { Schema } from "@/amplify/data/resource";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Heart, MessageSquare, Send } from "lucide-react";
+import { Heart, MessageSquare, Send, Trash2 } from "lucide-react";
 
 const client = generateClient<Schema>();
 
 type ChatMessageProps = {
   message: Schema["ChatMessage"]["type"];
   currentPlayerId: string;
+  playerName?: string;
 };
 
-export default function ChatMessageComponent({ message, currentPlayerId }: ChatMessageProps) {
-  const [playerName, setPlayerName] = useState<string>("名前不明");
+export default function ChatMessageComponent({ message, currentPlayerId, playerName: propPlayerName }: ChatMessageProps) {
+  const [playerName, setPlayerName] = useState<string>(propPlayerName || "読み込み中...");
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const [replies, setReplies] = useState<Schema["ChatReply"]["type"][]>([]);
   const [likesCount, setLikesCount] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
 
-  // プレイヤー名を取得
+  // プロップで渡されたプレイヤー名があれば使用、なければ取得
   useEffect(() => {
+    if (propPlayerName && propPlayerName !== "読み込み中...") {
+      setPlayerName(propPlayerName);
+      return;
+    }
+
     async function fetchPlayerName() {
       try {
         const playerResponse = await client.models.Player.get({
@@ -32,14 +38,17 @@ export default function ChatMessageComponent({ message, currentPlayerId }: ChatM
         });
         if (playerResponse && playerResponse.data) {
           setPlayerName(playerResponse.data.name);
+        } else {
+          setPlayerName("名前不明");
         }
       } catch (error) {
         console.error("プレイヤー情報の取得に失敗しました:", error);
+        setPlayerName("名前取得エラー");
       }
     }
 
     fetchPlayerName();
-  }, [message.playerId]);
+  }, [message.playerId, propPlayerName]);
 
   // リプライとイイねの数を取得
   useEffect(() => {
@@ -176,12 +185,36 @@ export default function ChatMessageComponent({ message, currentPlayerId }: ChatM
     }
   };
 
+  // メッセージを削除
+  const deleteMessage = async () => {
+    if (!confirm("このメッセージを削除しますか？")) return;
+    
+    try {
+      await client.models.ChatMessage.delete({
+        id: message.id,
+      });
+    } catch (error) {
+      console.error("メッセージの削除に失敗しました:", error);
+    }
+  };
+
   return (
     <div className="bg-gray-50 p-4 rounded-lg">
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center">
         <div className="font-semibold">{playerName}</div>
-        <div className="text-sm text-gray-500">
-          {new Date(message.createdAt).toLocaleString()}
+        <div className="flex items-center space-x-2">
+          <div className="text-sm text-gray-500">
+            {new Date(message.createdAt).toLocaleString()}
+          </div>
+          {message.playerId === currentPlayerId && (
+            <button
+              onClick={deleteMessage}
+              className="text-red-500 hover:text-red-700 p-1"
+              title="メッセージを削除"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
         </div>
       </div>
       <div className="my-2">{message.content}</div>
@@ -342,12 +375,36 @@ function ReplyItem({ reply, currentPlayerId }: {
     }
   };
 
+  // 返信を削除
+  const deleteReply = async () => {
+    if (!confirm("この返信を削除しますか？")) return;
+    
+    try {
+      await client.models.ChatReply.delete({
+        id: reply.id,
+      });
+    } catch (error) {
+      console.error("返信の削除に失敗しました:", error);
+    }
+  };
+
   return (
     <div className="ml-6 bg-gray-100 p-3 rounded">
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center">
         <div className="font-medium text-sm">{playerName}</div>
-        <div className="text-xs text-gray-500">
-          {new Date(reply.createdAt).toLocaleString()}
+        <div className="flex items-center space-x-2">
+          <div className="text-xs text-gray-500">
+            {new Date(reply.createdAt).toLocaleString()}
+          </div>
+          {reply.playerId === currentPlayerId && (
+            <button
+              onClick={deleteReply}
+              className="text-red-500 hover:text-red-700 p-1"
+              title="返信を削除"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
       </div>
       <div className="my-1 text-sm">{reply.content}</div>
