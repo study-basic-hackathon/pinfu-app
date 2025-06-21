@@ -1,0 +1,131 @@
+<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- グラデーション定義 -->
+    <linearGradient id="tileGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f0f0f0;stop-opacity:1" />
+    </linearGradient>
+    
+    <radialGradient id="backgroundGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#4c7c59;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#4c7c59;stop-opacity:0" />
+    </radialGradient>
+    
+    <linearGradient id="textShadow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2c5530;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a3320;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- アニメーション定義 -->
+    <animateTransform id="pulse1" attributeName="transform" type="scale" 
+                      values="1;1.2;1" dur="2s" repeatCount="indefinite" />
+    <animateTransform id="pulse2" attributeName="transform" type="scale"
+                      values="1;1.2;1" dur="2s" begin="0.3s" repeatCount="indefinite" />
+    <animateTransform id="pulse3" attributeName="transform" type="scale"
+                      values="1;1.2;1" dur="2s" begin="0.6s" repeatCount="indefinite" />
+    
+    <!-- ドロップシャドウフィルター -->
+    <filter id="tileShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="rgba(0,0,0,0.15)"/>
+    </filter>
+    
+    <filter id="textShadowFilter" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.1)"/>
+    </filter>
+  </defs>
+  
+  <!-- 背景の装飾円 -->
+  <circle cx="200" cy="150" r="120" fill="url(#backgroundGradient)" />
+  
+  <!-- 左の麻雀牌 -->
+  <g transform="translate(120, 80)">
+    <rect x="0" y="0" width="60" height="75" rx="6" ry="6" 
+          fill="url(#tileGradient)" 
+          stroke="#2c5530" 
+          stroke-width="2.5"
+          filter="url(#tileShadow)" />
+    <text x="30" y="45" 
+          font-family="Arial, sans-serif" 
+          font-size="24" 
+          font-weight="bold" 
+          fill="#2c5530" 
+          text-anchor="middle" 
+          dominant-baseline="central">平</text>
+  </g>
+  
+  <!-- 右の麻雀牌 -->
+  <g transform="translate(220, 80)">
+    <rect x="0" y="0" width="60" height="75" rx="6" ry="6" 
+          fill="url(#tileGradient)" 
+          stroke="#2c5530" 
+          stroke-width="2.5"
+          filter="url(#tileShadow)" />
+    <text x="30" y="45" 
+          font-family="Arial, sans-serif" 
+          font-size="24" 
+          font-weight="bold" 
+          fill="#2c5530" 
+          text-anchor="middle" 
+          dominant-baseline="central">和</text>
+  </g>
+  
+  <!-- アプリ名 -->
+  <text x="200" y="220" 
+        font-family="Arial, sans-serif" 
+        font-size="42" 
+        font-weight="bold" 
+        fill="url(#textShadow)" 
+        text-anchor="middle" 
+        dominant-baseline="central"
+        filter="url(#textShadowFilter)"
+        letter-spacing="2px">平和</text>
+  
+  <!-- サブタイトル -->
+  <text x="200" y="255" 
+        font-family="Arial, sans-serif" 
+        font-size="16" 
+        font-style="italic"
+        fill="#666666" 
+        text-anchor="middle" 
+        dominant-baseline="central">～ みんなで楽しむ麻雀アプリ ～</text>
+  
+  <!-- 装飾的な円（アニメーション付き） -->
+  <g transform="translate(170, 290)">
+    <circle cx="0" cy="0" r="6" fill="#4a7c59" opacity="0.6">
+      <animateTransform attributeName="transform" type="scale" 
+                        values="1;1.2;1" dur="2s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite" />
+    </circle>
+  </g>
+  
+  <g transform="translate(200, 290)">
+    <circle cx="0" cy="0" r="6" fill="#6b8e6b" opacity="0.6">
+      <animateTransform attributeName="transform" type="scale"
+                        values="1;1.2;1" dur="2s" begin="0.3s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" begin="0.3s" repeatCount="indefinite" />
+    </circle>
+  </g>
+  
+  <g transform="translate(230, 290)">
+    <circle cx="0" cy="0" r="6" fill="#8db4aa" opacity="0.6">
+      <animateTransform attributeName="transform" type="scale"
+                        values="1;1.2;1" dur="2s" begin="0.6s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" begin="0.6s" repeatCount="indefinite" />
+    </circle>
+  </g>
+  
+  <!-- フッターテキスト -->
+  <text x="200" y="340" 
+        font-family="Arial, sans-serif" 
+        font-size="12" 
+        fill="#888888" 
+        text-anchor="middle" 
+        dominant-baseline="central">初心者から上級者まで</text>
+  
+  <text x="200" y="360" 
+        font-family="Arial, sans-serif" 
+        font-size="12" 
+        fill="#888888" 
+        text-anchor="middle" 
+        dominant-baseline="central">安心して楽しめる麻雀の世界へ</text>
+</svg>

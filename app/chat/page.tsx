@@ -9,7 +9,6 @@ import outputs from "@/amplify_outputs.json";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import Link from "next/link";
 import ChatMessageComponent from "@/app/components/ChatMessage";
 import { ensurePlayerExists, getPlayerByUserId } from "../utils/playerUtils";
 
@@ -18,7 +17,7 @@ Amplify.configure(outputs);
 const client = generateClient<Schema>();
 
 export default function ChatPage() {
-  const { user, signOut } = useAuthenticator((context) => [context.user]);
+  const { user } = useAuthenticator((context) => [context.user]);
   const [playerInfo, setPlayerInfo] = useState<Schema["Player"]["type"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [messageContent, setMessageContent] = useState("");
@@ -195,14 +194,8 @@ export default function ChatPage() {
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="mb-8">
         <h1 className="text-2xl font-bold">チャット</h1>
-        <div className="flex space-x-4">
-          <Link href="/">
-            <Button variant="outline">ホームに戻る</Button>
-          </Link>
-          <Button onClick={signOut} variant="outline">ログアウト</Button>
-        </div>
       </div>
 
       {loading ? (
