@@ -4,7 +4,7 @@
  */
 export const authFormFields = {
   signUp: {
-    'custom:nickname': {
+    nickname: {
       order: 1,
       label: 'プレイヤー名',
       placeholder: 'プレイヤー名を入力してください',

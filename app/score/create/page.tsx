@@ -81,14 +81,19 @@ export default function CreateScorePage() {
     async function fetchPlayers() {
       try {
         const response = await client.models.Player.list();
-        if (response.data.length === 0) {
-          // サンプルプレイヤーがなければ作成
-          await createSamplePlayers();
-        } else {
-          const playerList = response.data.map(p => ({
-            id: p.id || '',
+        console.log("response.data:", response.data);
+        const playerList = response.data
+          .filter(p => p !== null)
+          .map(p => ({
+            id: p.id,
             name: p.name
           }));
+        console.log("playerList:", playerList);
+        
+        if (playerList.length <= 3) {
+          // プレイヤーが3人以下の場合はサンプルプレイヤーを作成
+          await createSamplePlayers(playerList);
+        } else {
           setPlayers(playerList);
           
           // 初期選択
@@ -120,7 +125,7 @@ export default function CreateScorePage() {
       }
     }
 
-    async function createSamplePlayers() {
+    async function createSamplePlayers(existingPlayers: Player[] = []) {
       const samplePlayers = [
         { name: "田中太郎", userId: `sample_user_1_${Date.now()}` },
         { name: "佐藤次郎", userId: `sample_user_2_${Date.now()}` },
@@ -145,16 +150,18 @@ export default function CreateScorePage() {
             });
           }
         }
-        setPlayers(createdPlayers);
+        // 既存のプレイヤーと新しく作成したサンプルプレイヤーを合わせる
+        const allPlayers = [...existingPlayers, ...createdPlayers];
+        setPlayers(allPlayers);
         
         // 初期選択
-        if (createdPlayers.length >= 4) {
+        if (allPlayers.length >= 4) {
           setFormData(prev => ({
             ...prev,
-            player1Id: createdPlayers[0].id,
-            player2Id: createdPlayers[1].id,
-            player3Id: createdPlayers[2].id,
-            player4Id: createdPlayers[3].id,
+            player1Id: allPlayers[0].id,
+            player2Id: allPlayers[1].id,
+            player3Id: allPlayers[2].id,
+            player4Id: allPlayers[3].id,
           }));
         }
       } catch (error) {
