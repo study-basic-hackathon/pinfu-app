@@ -277,11 +277,18 @@ export default function CreateScorePage() {
   };
 
   const handleScoreChange = (playerNum: number, value: string) => {
-    // 先頭のゼロを削除
-    let normalizedValue = value.replace(/^0+(?=\d)/, '');
+    // 数値以外の文字を除去
+    const numericValue = value.replace(/[^0-9-]/g, '');
+    
+    // 先頭のゼロを削除（ただし単独の0は残す）
+    let normalizedValue = numericValue.replace(/^0+(?=\d)/, '');
     
     // 空文字列の場合は0にする
-    const numValue = normalizedValue === '' ? 0 : parseInt(normalizedValue);
+    let numValue = 0;
+    if (normalizedValue !== '') {
+      const parsed = parseInt(normalizedValue);
+      numValue = isNaN(parsed) ? 0 : parsed;
+    }
     
     setFormData({
       ...formData,
@@ -291,12 +298,17 @@ export default function CreateScorePage() {
 
   const handleScoreInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target;
-    const value = input.value;
+    let value = input.value;
+    
+    // 数値以外の文字を除去
+    value = value.replace(/[^0-9-]/g, '');
     
     // 先頭のゼロを削除（ただし、単独の0は残す）
-    if (value.length > 1 && value.startsWith('0')) {
-      input.value = value.replace(/^0+/, '');
+    if (value.length > 1 && value.startsWith('0') && !value.startsWith('0-')) {
+      value = value.replace(/^0+/, '');
     }
+    
+    input.value = value;
   };
 
   const getPlayerName = (playerId: string): string => {
