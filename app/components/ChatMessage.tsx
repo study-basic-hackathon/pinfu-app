@@ -16,6 +16,36 @@ type ChatMessageProps = {
   playerName?: string;
 };
 
+// ツールチップコンポーネント
+function LikeTooltip({ 
+  likedUsers, 
+  children, 
+  isVisible 
+}: { 
+  likedUsers: string[], 
+  children: React.ReactNode,
+  isVisible: boolean 
+}) {
+  if (!isVisible || likedUsers.length === 0) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="relative">
+      {children}
+      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-50 min-w-48">
+        <div className="max-w-md break-words">
+          {likedUsers.length === 1 
+            ? `${likedUsers[0]}がいいねしました`
+            : `${likedUsers.slice(0, 10).join(', ')}${likedUsers.length > 10 ? ` 他${likedUsers.length - 10}人` : ''}がいいねしました`
+          }
+        </div>
+        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+      </div>
+    </div>
+  );
+}
+
 export default function ChatMessageComponent({ message, currentPlayerId, playerName: propPlayerName }: ChatMessageProps) {
   const [playerName, setPlayerName] = useState<string>(propPlayerName || "読み込み中...");
   const [showReplyForm, setShowReplyForm] = useState(false);
@@ -23,6 +53,8 @@ export default function ChatMessageComponent({ message, currentPlayerId, playerN
   const [replies, setReplies] = useState<Schema["ChatReply"]["type"][]>([]);
   const [likesCount, setLikesCount] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
+  const [likedUsers, setLikedUsers] = useState<string[]>([]);
+  const [showLikeTooltip, setShowLikeTooltip] = useState(false);
 
   // プロップで渡されたプレイヤー名があれば使用、なければ取得
   useEffect(() => {
@@ -82,6 +114,22 @@ export default function ChatMessageComponent({ message, currentPlayerId, playerN
         // 現在のユーザーがいいねしているか確認
         const userLike = likesResponse.data.find(like => like.playerId === currentPlayerId);
         setHasLiked(!!userLike);
+
+        // いいねしたユーザーの名前を取得
+        const userNames = await Promise.all(
+          likesResponse.data.map(async (like) => {
+            try {
+              const playerResponse = await client.models.Player.get({
+                id: like.playerId,
+              });
+              return playerResponse?.data?.name || "名前不明";
+            } catch (error) {
+              console.error("プレイヤー名の取得に失敗:", error);
+              return "名前不明";
+            }
+          })
+        );
+        setLikedUsers(userNames);
       } catch (error) {
         console.error("リプライといいねの取得に失敗しました:", error);
       }
@@ -113,10 +161,26 @@ export default function ChatMessageComponent({ message, currentPlayerId, playerN
         }
       }
     }).subscribe({
-      next: ({ items }) => {
+      next: async ({ items }) => {
         setLikesCount(items.length);
         const userLike = items.find(like => like.playerId === currentPlayerId);
         setHasLiked(!!userLike);
+
+        // いいねしたユーザーの名前を取得
+        const userNames = await Promise.all(
+          items.map(async (like) => {
+            try {
+              const playerResponse = await client.models.Player.get({
+                id: like.playerId,
+              });
+              return playerResponse?.data?.name || "名前不明";
+            } catch (error) {
+              console.error("プレイヤー名の取得に失敗:", error);
+              return "名前不明";
+            }
+          })
+        );
+        setLikedUsers(userNames);
       },
     });
 
@@ -220,19 +284,29 @@ export default function ChatMessageComponent({ message, currentPlayerId, playerN
       <div className="my-2">{message.content}</div>
       <div className="flex items-center space-x-4 mt-2">
         <button 
-          onClick={toggleLike}
-          className={`flex items-center space-x-1 ${hasLiked ? 'text-red-500' : 'text-gray-500'}`}
-        >
-          <Heart size={16} className={hasLiked ? 'fill-red-500' : ''} />
-          <span>{likesCount}</span>
-        </button>
-        <button 
           onClick={() => setShowReplyForm(!showReplyForm)} 
           className="flex items-center space-x-1 text-gray-500"
         >
           <MessageSquare size={16} />
           <span>{replies.length}</span>
         </button>
+        <div className="flex items-center space-x-2">
+          <button 
+            onClick={toggleLike}
+            className={`flex items-center space-x-1 ${hasLiked ? 'text-red-500' : 'text-gray-500'}`}
+          >
+            <Heart size={16} className={hasLiked ? 'fill-red-500' : ''} />
+            <span>{likesCount}</span>
+          </button>
+          {likedUsers.length > 0 && (
+            <span className="text-xs text-gray-500 max-w-48 truncate">
+              {likedUsers.length === 1 
+                ? `${likedUsers[0]}がいいね`
+                : `${likedUsers.join(', ')}がいいね`
+              }
+            </span>
+          )}
+        </div>
       </div>
 
       {showReplyForm && (
@@ -274,6 +348,8 @@ function ReplyItem({ reply, currentPlayerId }: {
   const [playerName, setPlayerName] = useState<string>("名前不明");
   const [likesCount, setLikesCount] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
+  const [likedUsers, setLikedUsers] = useState<string[]>([]);
+  const [showLikeTooltip, setShowLikeTooltip] = useState(false);
 
   // プレイヤー名を取得
   useEffect(() => {
@@ -309,6 +385,22 @@ function ReplyItem({ reply, currentPlayerId }: {
         // 現在のユーザーがいいねしているか確認
         const userLike = likesResponse.data.find(like => like.playerId === currentPlayerId);
         setHasLiked(!!userLike);
+
+        // いいねしたユーザーの名前を取得
+        const userNames = await Promise.all(
+          likesResponse.data.map(async (like) => {
+            try {
+              const playerResponse = await client.models.Player.get({
+                id: like.playerId,
+              });
+              return playerResponse?.data?.name || "名前不明";
+            } catch (error) {
+              console.error("プレイヤー名の取得に失敗:", error);
+              return "名前不明";
+            }
+          })
+        );
+        setLikedUsers(userNames);
       } catch (error) {
         console.error("いいねの取得に失敗しました:", error);
       }
@@ -324,10 +416,26 @@ function ReplyItem({ reply, currentPlayerId }: {
         }
       }
     }).subscribe({
-      next: ({ items }) => {
+      next: async ({ items }) => {
         setLikesCount(items.length);
         const userLike = items.find(like => like.playerId === currentPlayerId);
         setHasLiked(!!userLike);
+
+        // いいねしたユーザーの名前を取得
+        const userNames = await Promise.all(
+          items.map(async (like) => {
+            try {
+              const playerResponse = await client.models.Player.get({
+                id: like.playerId,
+              });
+              return playerResponse?.data?.name || "名前不明";
+            } catch (error) {
+              console.error("プレイヤー名の取得に失敗:", error);
+              return "名前不明";
+            }
+          })
+        );
+        setLikedUsers(userNames);
       },
     });
 
@@ -408,13 +516,23 @@ function ReplyItem({ reply, currentPlayerId }: {
         </div>
       </div>
       <div className="my-1 text-sm">{reply.content}</div>
-      <button 
-        onClick={toggleLike}
-        className={`flex items-center space-x-1 text-xs ${hasLiked ? 'text-red-500' : 'text-gray-500'}`}
-      >
-        <Heart size={14} className={hasLiked ? 'fill-red-500' : ''} />
-        <span>{likesCount}</span>
-      </button>
+      <div className="flex items-center space-x-2">
+        <button 
+          onClick={toggleLike}
+          className={`flex items-center space-x-1 text-xs ${hasLiked ? 'text-red-500' : 'text-gray-500'}`}
+        >
+          <Heart size={14} className={hasLiked ? 'fill-red-500' : ''} />
+          <span>{likesCount}</span>
+        </button>
+        {likedUsers.length > 0 && (
+          <span className="text-xs text-gray-500 max-w-32 truncate">
+            {likedUsers.length === 1 
+              ? `${likedUsers[0]}がいいね`
+              : `${likedUsers.join(', ')}がいいね`
+            }
+          </span>
+        )}
+      </div>
     </div>
   );
 } 
