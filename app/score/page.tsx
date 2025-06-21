@@ -3,33 +3,34 @@
 import { useState, useEffect } from "react";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
-// import "./../app.css";
+import { getCurrentUser } from 'aws-amplify/auth';
+import "./../app.css";
 import { Amplify } from "aws-amplify";
 import outputs from "@/amplify_outputs.json";
+import { useAuthenticator } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
-<<<<<<< Updated upstream
-
-=======
 import { propertyValidator } from "aws-cdk-lib";
-import { ensurePlayerExists, getPlayerByUserId } from "../utils/playerUtils";
+import { ensurePlayerExists, getPlayerByUserId, getPlayerById } from "../utils/playerUtils";
 import Link from "next/link";
->>>>>>> Stashed changes
 Amplify.configure(outputs);
 
 const client = generateClient<Schema>();
 
 export default function App() {
-<<<<<<< Updated upstream
-  // const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
-  const todos=[{id: 13,name: "はむすたー",score: 40000},{id: 10,name: "はむすたー",score: 30000},{id: 15,name: "はむすたー",score: 50000}]
-=======
   const { user, signOut } = useAuthenticator((context) => [context.user]);
   const [playerInfo, setPlayerInfo] = useState<Schema["Player"]["type"] | null>(null);
-  const [players, setPlayers] = useState<Schema["Player"]["type"][]>([]);
-  const [match, setmatches] = useState<Schema["MahjongScore"]["type"][]>([]);
-  const [allScores, setAllScores] = useState<Schema["MahjongScorePlayer"]["type"][]>([]);
+  const [players,setPlayers] = useState<Schema["Player"]["type"][]>([]);
+  const [matchesWithScores, setMatchesWithScores] = useState<Array<{
+    date: string;
+    battletitle: string;
+    score: Array<{
+      id: string;
+      name: string;
+      score: number;
+    }>;
+  }>>([]);
+  const [scoreplayer, setscores] = useState<Schema["MahjongScorePlayer"]["type"][]>([]);
   const [loading, setLoading] = useState(true);
-  const [matchesWithScores, setMatchesWithScores] = useState<any[]>([]);
   
   // ユーザー情報の取得
   useEffect(() => {
@@ -39,104 +40,114 @@ export default function App() {
         // 現在のユーザーIDを取得
         const currentUser = await getCurrentUser();
         const userId = currentUser.userId;
->>>>>>> Stashed changes
 
-  // function listTodos() {
-  //   client.models.Todo.observeQuery().subscribe({
-  //     next: (data) => setTodos([...data.items]),
-  //   });
-  // }
+        // まず既存のプレイヤー情報を取得を試行
+        let player = await getPlayerByUserId(userId);
 
-  // useEffect(() => {
-  //   listTodos();
-  // }, []);
-
-  function createTodo() {
-    client.models.Todo.create({
-      content: window.prompt("Enter the result"),
-    });
-  }
-
-<<<<<<< Updated upstream
-  const battletitle = "試合形式"; 
-  const name = "neko";
-
-  return (
-    <main className="p-6">
-      <h1 className="text-2x1 font-bold">戦績</h1>
-      <button onClick={createTodo} className="mb-4 px-4 py-2 bg-blue-300 text-white rounded hover:bg-blue-600">戦歴を追加する</button>
-      
-      <div className="flex border rounded overflow-hidden">
-        <div className="w-1/4">
-          <div className="flex justify-center">
-            <div className="test-3x1">写真</div>
-=======
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        // 試合データを取得
-        const matches = await client.models.MahjongScore.list();
-        const sortedmatches = matches.data.sort((a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        setmatches(sortedmatches);
-
-        // 全スコアを取得
-        const scores = await client.models.MahjongScorePlayer.list();
-        setAllScores(scores.data);
-
-        // プレイヤーデータを取得
-        const fetchplayerdata = await client.models.Player.list();
-        setPlayers(fetchplayerdata.data);
+        setPlayerInfo(player);
       } catch (error) {
-        console.error("データの取得に失敗しました", error);
+        console.error("プレイヤー情報の取得に失敗しました:", error);
+      } finally {
+        setLoading(false);
       }
     }
 
     if (user) {
-      fetchData();
+      fetchCurrentPlayer();
     }
   }, [user]);
 
-  // 試合とスコアを組み合わせる
+  // 試合データの取得とプレイヤー名の解決を行う
   useEffect(() => {
-    if (match.length > 0 && allScores.length > 0 && players.length > 0) {
-      const processedMatches = match.map(m => {
-        // この試合のスコアを取得
-        const matchScores = allScores.filter(score => score.mahjongScoreId === m.id);
-        
-        // スコアにプレイヤー名を追加
-        const scoresWithNames = matchScores.map(score => {
-          const player = players.find(p => p.userId === score.playerId);
-          return {
-            id: score.playerId,
-            name: player?.name || "不明",
-            score: score.score
-          };
+    async function fetchMatchesWithPlayerNames() {
+      try {
+        const matches = await client.models.MahjongScore.list();
+        const sortedmatches = matches.data.sort((a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        const scores = await client.models.MahjongScorePlayer.list();
+        const Myscores = scores.data.filter((score) => score.playerId === user.userId);
+        setscores(Myscores);
+
+        // デバッグ情報を追加
+        console.log("全ての試合:", sortedmatches);
+        console.log("全てのスコア:", scores.data);
+        console.log("マイスコア:", Myscores);
+
+        console.log("=== スコアデータの詳細確認 ===");
+        console.log("スコアデータ数:", scores.data.length);
+        scores.data.forEach((score, index) => {
+          console.log(`  スコア${index + 1}:`, {
+            id: score.id,
+            playerId: score.playerId,
+            score: score.score,
+            mahjongScoreId: score.mahjongScoreId
+          });
         });
+        console.log("=== スコアデータ確認終了 ===");
 
-        return {
-          date: m.date,
-          battletitle: m.gameType,
-          score: scoresWithNames
-        };
-      });
+        // プレイヤー名を含む試合データを作成
+        const matchesWithNames = await Promise.all(
+          sortedmatches.map(async (match) => {
+            const matchScores = scores.data.filter(score => score.mahjongScoreId === match.id);
+            console.log(`試合 ${match.id} のスコア:`, matchScores);
+            
+            const scoresWithNames = await Promise.all(
+              matchScores.map(async (score) => {
+                console.log(`プレイヤーID ${score.playerId} を検索中...`);
+                
+                // Player.idで直接検索
+                const player = await getPlayerById(score.playerId);
+                console.log(`getPlayerById関数の結果:`, player);
+                
+                return {
+                  id: score.playerId,
+                  name: player?.name || 'Unknown Player',
+                  score: score.score
+                };
+              })
+            );
+            return {
+              date: match.date,
+              battletitle: match.gameType,
+              score: scoresWithNames
+            };
+          })
+        );
 
-      setMatchesWithScores(processedMatches);
+        setMatchesWithScores(matchesWithNames);
+      } catch (error) {
+        console.error("試合記録の取得に失敗しました", error);
+      }
     }
-  }, [match, allScores, players]);
 
-// // const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
+    if (user) {
+      fetchMatchesWithPlayerNames();
+    }
 
-//function listTodos() {
-//  client.models.Todo.observeQuery().subscribe({
-//  next: (data) => setTodos([...data.items]),
-//});
-//}
-
-// useEffect(() => {
-//   listTodos();
-// }, []);
+    async function fetchplayers(){
+      try{
+        const fetchplayerdata= await client.models.Player.list();
+        const fetchplayers=fetchplayerdata.data;
+        console.log("=== プレイヤーデータの詳細確認 ===");
+        console.log("全てのプレイヤー数:", fetchplayers.length);
+        console.log("各プレイヤーの詳細:");
+        fetchplayers.forEach((player, index) => {
+          console.log(`  プレイヤー${index + 1}:`, {
+            id: player.id,
+            name: player.name,
+            userId: player.userId
+          });
+        });
+        console.log("=== プレイヤーデータ確認終了 ===");
+        setPlayers(fetchplayers);
+      }catch (error) {
+        console.error("プレイヤーの取得に失敗しました", error);
+      }
+    }
+    fetchplayers();
+  }, [user]);
 
 function createscore() {
   client.models.Todo.create({
@@ -164,11 +175,6 @@ return (
                        overflow-hidden flex flex-col  md:flex-row">
           {/* 日付を表示 */}
           <div className="w-1/4 border-r p-4 flex bg-gray-50">
-            {/* <img
-                  src={m.imageurl}
-                  width="150" 
-                  height="150"
-                /> */}
             <p className="text-sm text-center">{m.date}</p>
           </div>
           {/* 試合形式と結果を表示 */}
@@ -181,37 +187,16 @@ return (
                 .map((score, index) => (
                   <li key={score.id} className="flex justify-between p-2 rounded">
                     <span className="w-10">{index + 1}位 </span>
-                    <span className="flex-1">{score.name} </span>
-                    <span className="w-20 text-right">{score.score}点 </span>
+                    <span className="flex-1">{score.name}</span>
+                    <span className="w-20 text-right">{score.score}点</span>
                     <span className="w-24 text-right">{(Number(score.score) - (m.score.length === 4 ? 30000 : 35000)) / 1000}</span>
                   </li>
                 ))}
             </ul>
->>>>>>> Stashed changes
           </div>
-          <ul className="space-y-2">
-            {todos.map((todo,index) => (
-              <li key={todo.id} className="text-center ">
-                {index+1}
-              </li>
-            ))}
-          </ul>
         </div>
-      </div>
-
-      <h2 className="text-lg font-semibold mb-2">{battletitle}</h2>
-
-      <ul className="space-y-2">
-          {todos.map((todo, index) => (
-            <li key={todo.id}
-                className="flex justify-between items-center p-2 rounded">
-
-              <span>{name}.</span>
-              <span>{todo.score}.</span>
-              <span>{Number(todo.score)-35000}</span>
-            </li>
-          ))}
-        </ul>
-    </main>
-  );
+      ))}
+    </div>
+  </main>
+);
 }
