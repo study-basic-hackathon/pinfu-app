@@ -10,7 +10,6 @@ import { useAuthenticator } from "@aws-amplify/ui-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 // import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
 import { getPlayerByUserId, ensurePlayerExists } from "../utils/playerUtils";
 
 Amplify.configure(outputs);
@@ -18,7 +17,7 @@ Amplify.configure(outputs);
 const client = generateClient<Schema>();
 
 export default function PlayerPage() {
-  const { user, signOut } = useAuthenticator((context) => [context.user]);
+  const { user } = useAuthenticator((context) => [context.user]);
   const [playerInfo, setPlayerInfo] = useState<Schema["Player"]["type"] | null>(null);
   const [userAttributes, setUserAttributes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -118,14 +117,8 @@ export default function PlayerPage() {
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="mb-8">
         <h1 className="text-2xl font-bold">プレイヤー情報</h1>
-        <div className="flex space-x-4">
-          <Link href="/">
-            <Button variant="outline">ホームに戻る</Button>
-          </Link>
-          <Button onClick={signOut} variant="outline">ログアウト</Button>
-        </div>
       </div>
 
       <div className="max-w-md mx-auto">
