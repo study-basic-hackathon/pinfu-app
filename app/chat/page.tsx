@@ -251,6 +251,7 @@ export default function ChatPage() {
                     sendMessage();
                   }} 
                   disabled={sending || !messageContent.trim()}
+                  className="min-w-24 px-6"
                 >
                   {sending ? "送信中..." : "送信"}
                 </Button>
